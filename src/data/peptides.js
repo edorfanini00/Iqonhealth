@@ -101,6 +101,96 @@ export const peptidesDB = {
       med:  { mcg: 200, label: "Standard Body Recomp", risk: "Mild water retention and occasional hand/wrist tingling possible. Generally well-tolerated.", source: "Standard clinical protocol (200mcg each)" },
       high: { mcg: 300, label: "Aggressive GH Optimization", risk: "Water retention, joint stiffness, and carpal tunnel-like symptoms possible. Reduce dose if numbness persists. Monitor IGF-1 levels.", source: "Upper clinical range (300mcg each)" }
     }
+  },
+
+  "GHK-Cu": {
+    category: "Skin, Hair & Healing",
+    desc: "Copper tripeptide-1. Promotes collagen synthesis, skin elasticity, hair growth, and dampens systemic inflammation. Not FDA-approved.",
+    timing: "Morning or Evening. Time of day is not critical.",
+    administration: "Subcutaneous injection into abdominal fat or thigh. Rotate sites frequently as GHK-Cu can cause localized injection site pain/redness.",
+    defaultVial: 50,
+    schedule: "Daily",
+    typicalCycle: 8, // Often cycled 30-60 days on, then an equal off period
+    color: "#3b82f6", // Blue
+    reconstitution: "Add bacteriostatic water carefully. The solution will turn bright blue. Store refrigerated. If experiencing injection site pain, dilute with more water or inject deeper SubQ.",
+    weightBased: null,
+    doses: {
+      low:  { mcg: 1000, label: "Starting Dose (1mg)", risk: "Well tolerated. Lowest risk of copper accumulation or injection site pain.", source: "Conservative research protocol" },
+      med:  { mcg: 2000, label: "Standard Dose (2mg)", risk: "Standard effective dose for skin/healing. Monitor for injection site irritation.", source: "Standard wellness protocol" },
+      high: { mcg: 3000, label: "Aggressive Healing (3mg+)", risk: "Higher risk of localized pain and theoretical copper toxicity if not cycled properly. Do not exceed 8 weeks.", source: "Advanced targeted healing protocol" }
+    }
+  },
+
+  "Semax": {
+    category: "Cognition & Nootropics",
+    desc: "Synthetic peptide derived from ACTH. Modulates BDNF and supports cognitive enhancement, focus, and neuroprotection. Not FDA-approved.",
+    timing: "Morning or early afternoon. AVOID evening use as it can cause insomnia due to its stimulant-like properties.",
+    administration: "Subcutaneous injection (though intranasal is also popular).",
+    defaultVial: 30, // Often 10mg to 30mg vials
+    schedule: "Daily (or 5 days on / 2 off)",
+    typicalCycle: 4,
+    color: "#eab308", // Yellow
+    reconstitution: "Standard reconstitution. Store refrigerated. Degrades quickly if exposed to heat or vigorous shaking.",
+    weightBased: null,
+    doses: {
+      low:  { mcg: 150, label: "Threshold / Subtle Focus", risk: "Very low risk. Good starting dose to test sensitivity.", source: "Threshold cognitive dose" },
+      med:  { mcg: 300, label: "Standard Nootropic Dose", risk: "Clean focus and energy. Can cause mild anxiety in sensitive individuals.", source: "Standard cognitive protocol" },
+      high: { mcg: 600, label: "Deep Work / High Stress", risk: "Stimulant-like effects. Higher risk of anxiety, restlessness, and insomnia if taken late.", source: "Advanced acute focus protocol" }
+    }
+  },
+
+  "Selank": {
+    category: "Anxiety & Mood",
+    desc: "Anxiolytic peptide closely related to Tuftsin. Promotes relaxation, reduces anxiety, and stabilizes mood without the sedative effects of traditional anxiolytics. Not FDA-approved.",
+    timing: "Morning or evening. Does not typically cause drowsiness, but calms the nervous system.",
+    administration: "Subcutaneous injection. Rotate sites.",
+    defaultVial: 10,
+    schedule: "Daily or As Needed",
+    typicalCycle: 4,
+    color: "#22c55e", // Green
+    reconstitution: "Standard reconstitution with bacteriostatic water. Keep refrigerated.",
+    weightBased: null,
+    doses: {
+      low:  { mcg: 250, label: "Mild Anxiety / Baseline", risk: "Very well tolerated. No sedative effects.", source: "Standard starting protocol" },
+      med:  { mcg: 500, label: "Standard Anxiolytic Dose", risk: "Effective for managing daily stress. Some users split this into 250mcg twice daily.", source: "Common clinical recommendation" },
+      high: { mcg: 1000, label: "Acute Stress Response", risk: "High dose. Diminishing returns reported beyond this level. No significant toxicity observed, but unnecessary for daily use.", source: "Upper ceiling limit" }
+    }
+  },
+
+  "Ipamorelin": {
+    category: "Growth Hormone Secretion",
+    desc: "A highly selective GH secretagogue. Simulates a natural growth hormone pulse without significantly increasing cortisol or prolactin. Not FDA-approved.",
+    timing: "Bedtime (empty stomach, 2 hrs post-meal) or before fasted cardio. Aligns with natural GH release.",
+    administration: "Subcutaneous injection into abdominal fat.",
+    defaultVial: 5,
+    schedule: "5 days on / 2 off",
+    typicalCycle: 12,
+    color: "#0ea5e9", // Light blue
+    reconstitution: "Standard reconstitution. Store refrigerated.",
+    weightBased: { mcgPerKg: { low: 1.5, med: 2.5, high: 4 } },
+    doses: {
+      low:  { mcg: 100, label: "Anti-Aging / Sleep", risk: "Very well tolerated. Often combined with CJC-1295.", source: "Conservative starting dose" },
+      med:  { mcg: 200, label: "Standard Optimization", risk: "Standard dose for body recomp and recovery. Mild tingling possible.", source: "Standard clinical protocol" },
+      high: { mcg: 300, label: "Aggressive Hypertrophy", risk: "Higher risk of water retention. Usually split into 2-3 injections per day rather than taken all at once.", source: "Upper limit single dose" }
+    }
+  },
+
+  "GLOW Blend": {
+    category: "Aesthetics & Repair",
+    desc: "A compounded blend typically containing GHK-Cu, BPC-157, and sometimes TB-500. Designed for skin elasticity, hair growth, and overall tissue rejuvenation. Not FDA-approved.",
+    timing: "Morning or Evening. Consistent daily dosing.",
+    administration: "Subcutaneous injection. Rotate sites as the GHK-Cu component can cause localized irritation.",
+    defaultVial: 50, // Vials vary wildly in total mg, using 50 as a placeholder for GLOW blends
+    schedule: "Daily",
+    typicalCycle: 8,
+    color: "#f59e0b", // Amber
+    reconstitution: "Standard reconstitution. Solution may be blue due to GHK-Cu. If injection stings, dilute with additional bacteriostatic water.",
+    weightBased: null,
+    doses: {
+      low:  { mcg: 500, label: "Starter Dose", risk: "Lowest risk of injection site pain.", source: "Introductory blend dose" },
+      med:  { mcg: 1000, label: "Standard Dose", risk: "Monitor injection sites for redness/swelling due to copper content.", source: "Standard clinical blend dose" },
+      high: { mcg: 2000, label: "Aggressive Protocol", risk: "High risk of localized pain. Consider splitting into two daily injections.", source: "Advanced blend dosing" }
+    }
   }
 
 };

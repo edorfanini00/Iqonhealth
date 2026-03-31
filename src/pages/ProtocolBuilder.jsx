@@ -93,29 +93,32 @@ export default function ProtocolBuilder() {
           <h2 className="text-3xl font-light text-white mb-xs">Select Compounds</h2>
           <p className="text-sm text-secondary mb-sm leading-relaxed">Tap to add to your stack. You can select multiple for a combined protocol.</p>
           
-          <div className="flex-col gap-sm">
+          <div className="flex gap-sm flex-wrap mt-sm">
             {compoundNames.map(name => {
               const data = peptidesDB[name];
               const isSelected = selectedComps.includes(name);
               return (
                 <div 
                   key={name}
-                  className="glass-card flex items-center gap-md cursor-pointer transition-all"
+                  className="glass-card flex-col items-center justify-center cursor-pointer transition-all border relative overflow-hidden"
                   onClick={() => toggleCompound(name)}
                   style={{ 
-                    padding: '20px',
+                    padding: '16px 12px',
                     borderColor: isSelected ? data.color : 'rgba(255,255,255,0.05)',
-                    background: isSelected ? `${data.color}10` : 'rgba(0,0,0,0.2)'
+                    background: isSelected ? `${data.color}15` : 'rgba(0,0,0,0.2)',
+                    width: 'calc(50% - 6px)', // 2 columns
+                    height: '110px',
+                    textAlign: 'center'
                   }}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all" style={{ background: isSelected ? data.color : 'rgba(255,255,255,0.05)' }}>
-                    {isSelected ? <Check size={20} className="text-white" /> : <div className="w-3 h-3 rounded-full" style={{ background: data.color }}></div>}
-                  </div>
-                  <div className="flex-col flex-1">
-                    <span className="font-medium text-white">{name}</span>
-                    <span className="text-[11px] text-secondary mt-[2px]">{data.category} • {data.schedule}</span>
-                  </div>
-                  <ChevronRight size={16} className="text-secondary opacity-30" />
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 flex items-center justify-center w-5 h-5 rounded-full" style={{ background: data.color }}>
+                      <Check size={12} className="text-white" />
+                    </div>
+                  )}
+                  <div className="w-8 h-8 rounded-full mb-xs mx-auto" style={{ background: isSelected ? data.color : 'rgba(255,255,255,0.05)' }}></div>
+                  <span className="font-semibold text-white text-sm leading-tight">{name}</span>
+                  <span className="text-[10px] text-secondary mt-[2px]">{data.schedule}</span>
                 </div>
               );
             })}

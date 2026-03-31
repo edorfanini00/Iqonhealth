@@ -121,6 +121,12 @@ export default function Onboarding() {
               icon={<ShoppingBag size={24} />} title="Shop Products" 
               active={firstAction === 'shop'} onClick={() => { setFirstAction('shop'); nextStep(); }}
             />
+            <div 
+              className="mt-sm text-center py-md cursor-pointer transition-all hover:opacity-100 opacity-60 flex justify-center items-center gap-2"
+              onClick={() => { setFirstAction('today'); nextStep(); }}
+            >
+              <span className="text-secondary text-sm font-medium">Skip for now</span>
+            </div>
           </div>
         </div>
       )}
