@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Activity, BookOpen, ShoppingBag, Plus } from 'lucide-react';
+import { Home, Activity, BookOpen, ShoppingBag, Plus, Calculator } from 'lucide-react';
 
 const BottomNav = () => {
   const navigate = useNavigate();
@@ -16,28 +16,33 @@ const BottomNav = () => {
 
       {/* Main Nav Bar */}
       <nav 
-        className="flex justify-between items-center px-lg py-sm w-full" 
         style={{ 
           position: 'absolute', 
           bottom: 0, 
-          maxWidth: '500px', 
+          left: 0,
+          right: 0,
+          maxWidth: '500px',
+          margin: '0 auto',
           zIndex: 50,
-          background: 'rgba(0,0,0,0.8)',
+          background: 'rgba(0,0,0,0.85)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderTop: '1px solid rgba(255,255,255,0.05)',
-          paddingBottom: '24px' // iOS home indicator whitespace
+          paddingBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 20px 28px 20px'
         }}
       >
-        <div className="flex justify-between w-full pr-[80px]">
-          <NavItem to="/app/today" icon={<Home size={24} />} label="Today" />
-          <NavItem to="/app/protocols" icon={<Activity size={24} />} label="Cycles" />
-        </div>
+        <NavItem to="/app/today" icon={<Home size={22} />} label="Today" />
+        <NavItem to="/app/protocols" icon={<Activity size={22} />} label="Cycles" />
         
-        <div className="flex justify-between w-full pl-[20px]">
-          <NavItem to="/app/library" icon={<BookOpen size={24} />} label="Library" />
-          <NavItem to="/app/shop" icon={<ShoppingBag size={24} />} label="Shop" />
-        </div>
+        {/* Spacer for FAB */}
+        <div style={{ width: '64px' }}></div>
+        
+        <NavItem to="/app/calculator" icon={<Calculator size={22} />} label="Calc" />
+        <NavItem to="/app/library" icon={<BookOpen size={22} />} label="Library" />
       </nav>
     </>
   );
@@ -47,15 +52,19 @@ const NavItem = ({ to, icon, label }) => {
   return (
     <NavLink 
       to={to} 
-      className={({ isActive }) => `flex-col items-center gap-xs ${isActive ? 'text-primary' : 'text-secondary'}`}
       style={({ isActive }) => ({ 
         textDecoration: 'none', 
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '4px',
+        color: isActive ? '#ffffff' : 'rgba(255,255,255,0.35)',
         transition: 'color 0.2s',
-        opacity: isActive ? 1 : 0.5 
+        minWidth: '48px'
       })}
     >
       {icon}
-      <span className="text-[10px] font-medium tracking-wide mt-[2px]">{label}</span>
+      <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.5px' }}>{label}</span>
     </NavLink>
   );
 };

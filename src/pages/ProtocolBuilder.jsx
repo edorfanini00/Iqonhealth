@@ -1,49 +1,70 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, Sun, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, Moon, Sun, AlertTriangle, Info, ChevronRight, Beaker, BookOpen, Check } from 'lucide-react';
+import { peptidesDB, calcConcentration, calcDrawVolume, calcSyringeUnits, calcDosesPerVial, calcVialsNeeded } from '../data/peptides';
 
-const peptidesDB = {
-  "BPC-157": {
-    desc: "Accelerates healing of tendons, muscles, and the nervous system.",
-    time: "Best taken at night (8:00 - 9:00 PM) to align with natural recovery processes during sleep.",
-    defaultVial: 5, // mg
-    doses: {
-      low: { mcg: 250, desc: "Maintenance / Mild Injury" },
-      med: { mcg: 500, desc: "Standard Protocol" },
-      high: { mcg: 1000, desc: "Acute Severe Injury" }
-    }
-  },
-  "Tirzepatide": {
-    desc: "Dual GIP/GLP-1 receptor agonist for metabolism and appetite control.",
-    time: "Morning, fasted. Once weekly administration.",
-    defaultVial: 10,
-    doses: {
-      low: { mcg: 2500, desc: "Starting Titration" },
-      med: { mcg: 5000, desc: "Maintenance" },
-      high: { mcg: 10000, desc: "Advanced Metabolic Correction" }
-    }
-  }
-};
+const compoundNames = Object.keys(peptidesDB);
 
 export default function ProtocolBuilder() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [selectedComp, setSelectedComp] = useState(null);
+  const [selectedComps, setSelectedComps] = useState([]); // multi-select
+  const [currentCompIdx, setCurrentCompIdx] = useState(0);
   
-  // Reconstitution state
-  const [vialMg, setVialMg] = useState('');
-  const [waterMl, setWaterMl] = useState('2');
+  // Per-compound config
+  const [configs, setConfigs] = useState({});
 
-  const compData = selectedComp ? peptidesDB[selectedComp] : null;
+  const toggleCompound = (name) => {
+    setSelectedComps(prev => 
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+  };
 
-  // Math
-  const vialMcg = parseFloat(vialMg || 0) * 1000;
-  const diluentMl = parseFloat(waterMl || 0);
-  const concentration = diluentMl > 0 ? vialMcg / diluentMl : 0; // mcg per ml
+  const updateConfig = (compound, key, value) => {
+    setConfigs(prev => ({
+      ...prev,
+      [compound]: { ...prev[compound], [key]: value }
+    }));
+  };
 
-  const getUnits = (targetMcg) => {
-    if (concentration === 0) return 0;
-    return ((targetMcg / concentration) * 100).toFixed(1);
+  const getConfig = (compound) => {
+    const data = peptidesDB[compound];
+    return {
+      vialMg: configs[compound]?.vialMg || data.defaultVial.toString(),
+      waterMl: configs[compound]?.waterMl || '2',
+      tier: configs[compound]?.tier || 'med',
+      ...configs[compound]
+    };
+  };
+
+  const currentComp = selectedComps[currentCompIdx];
+  const currentData = currentComp ? peptidesDB[currentComp] : null;
+  const currentConfig = currentComp ? getConfig(currentComp) : null;
+
+  // Auto-calc for current compound
+  const concentration = currentConfig ? calcConcentration(parseFloat(currentConfig.vialMg || 0), parseFloat(currentConfig.waterMl || 0)) : 0;
+
+  const saveProtocol = () => {
+    const protocol = selectedComps.map(comp => {
+      const cfg = getConfig(comp);
+      const data = peptidesDB[comp];
+      const tier = data.doses[cfg.tier];
+      const conc = calcConcentration(parseFloat(cfg.vialMg || 0), parseFloat(cfg.waterMl || 0));
+      return {
+        compound: comp,
+        vialMg: cfg.vialMg,
+        waterMl: cfg.waterMl,
+        tier: cfg.tier,
+        doseMcg: tier.mcg,
+        units: calcSyringeUnits(calcDrawVolume(tier.mcg, conc)),
+        schedule: data.schedule,
+        weeks: data.typicalCycle
+      };
+    });
+    const existing = JSON.parse(localStorage.getItem('protocols') || '[]');
+    existing.push({ id: Date.now(), name: `Stack ${existing.length + 1}`, compounds: protocol, createdAt: new Date().toISOString() });
+    localStorage.setItem('protocols', JSON.stringify(existing));
+    navigate('/app/protocols');
   };
 
   return (
@@ -54,150 +75,230 @@ export default function ProtocolBuilder() {
         <button className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 border border-white/10 text-white cursor-pointer" onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)}>
           <ArrowLeft size={16} />
         </button>
-        <span className="text-lg font-medium text-white">Add to Protocol</span>
+        <span className="text-lg font-medium text-white">
+          {step === 1 ? 'Build Protocol' : step === 2 ? `Setup: ${currentComp}` : 'Review Stack'}
+        </span>
       </div>
 
+      {/* Progress */}
+      <div className="px-xs mb-lg">
+        <div className="w-full h-[3px] bg-white/5 rounded-full overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(step / 3) * 100}%`, background: 'linear-gradient(90deg, var(--accent-dark), var(--accent-light))' }}></div>
+        </div>
+      </div>
+
+      {/* ========== STEP 1: Select Compounds ========== */}
       {step === 1 && (
         <div className="flex-col gap-md animate-fade-in">
-          <h2 className="text-3xl font-light mb-sm text-white">Select Compound</h2>
+          <h2 className="text-3xl font-light text-white mb-xs">Select Compounds</h2>
+          <p className="text-sm text-secondary mb-sm leading-relaxed">Tap to add to your stack. You can select multiple for a combined protocol.</p>
           
           <div className="flex-col gap-sm">
-            {Object.entries(peptidesDB).map(([name, data]) => (
-              <div 
-                key={name}
-                className="glass-card flex-col p-md cursor-pointer hover:bg-white/5 transition-colors border-white/5"
-                onClick={() => {
-                  setSelectedComp(name);
-                  setVialMg(data.defaultVial.toString());
-                  setStep(2);
-                }}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-medium text-white">{name}</span>
-                  <span className="text-xs bg-white/10 px-md py-[4px] rounded-full text-white font-medium">Select</span>
+            {compoundNames.map(name => {
+              const data = peptidesDB[name];
+              const isSelected = selectedComps.includes(name);
+              return (
+                <div 
+                  key={name}
+                  className="glass-card flex items-center gap-md cursor-pointer transition-all"
+                  onClick={() => toggleCompound(name)}
+                  style={{ 
+                    padding: '20px',
+                    borderColor: isSelected ? data.color : 'rgba(255,255,255,0.05)',
+                    background: isSelected ? `${data.color}10` : 'rgba(0,0,0,0.2)'
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all" style={{ background: isSelected ? data.color : 'rgba(255,255,255,0.05)' }}>
+                    {isSelected ? <Check size={20} className="text-white" /> : <div className="w-3 h-3 rounded-full" style={{ background: data.color }}></div>}
+                  </div>
+                  <div className="flex-col flex-1">
+                    <span className="font-medium text-white">{name}</span>
+                    <span className="text-[11px] text-secondary mt-[2px]">{data.category} • {data.schedule}</span>
+                  </div>
+                  <ChevronRight size={16} className="text-secondary opacity-30" />
                 </div>
-                <p className="text-sm text-secondary mt-xs pr-md leading-relaxed">{data.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div className="flex-col gap-md animate-fade-in">
-          <h2 className="text-3xl font-light text-white mb-xs">Vial Setup</h2>
-          
-          <div className="bg-accent/10 p-md rounded-xl border border-accent/20 flex gap-sm items-start mb-sm">
-            <Info size={20} className="text-accent flex-shrink-0 mt-[2px]" />
-            <p className="text-sm text-white leading-relaxed opacity-90">
-              Before setting a schedule for <strong className="text-accent">{selectedComp}</strong>, we need to reconstitute it. Enter the amounts below carefully.
-            </p>
-          </div>
-
-          <div className="flex-col gap-xs">
-            <label className="text-xs font-semibold uppercase tracking-wider text-secondary pl-xs">Vial Size (mg)</label>
-            <input 
-              type="number" 
-              value={vialMg} 
-              onChange={e => setVialMg(e.target.value)} 
-              placeholder="e.g. 5"
-              className="text-white text-lg"
-            />
-          </div>
-
-          <div className="flex-col gap-xs mt-sm">
-            <label className="text-xs font-semibold uppercase tracking-wider text-secondary pl-xs">Bacteriostatic Water Added (ml)</label>
-            <input 
-              type="number" 
-              value={waterMl} 
-              onChange={e => setWaterMl(e.target.value)} 
-              placeholder="e.g. 2"
-              className="text-white text-lg"
-            />
+              );
+            })}
           </div>
 
           <button 
             className="btn-primary mt-lg shadow-2xl" 
-            disabled={!vialMg || !waterMl}
-            onClick={() => setStep(3)}
-            style={{ padding: '18px', opacity: (!vialMg || !waterMl) ? 0.5 : 1 }}
+            disabled={selectedComps.length === 0}
+            onClick={() => { setCurrentCompIdx(0); setStep(2); }}
+            style={{ padding: '18px', opacity: selectedComps.length === 0 ? 0.4 : 1 }}
           >
-            Calculate Dosages
+            Configure {selectedComps.length > 0 ? `${selectedComps.length} Compound${selectedComps.length > 1 ? 's' : ''}` : 'Stack'} →
           </button>
         </div>
       )}
 
-      {step === 3 && compData && (
-        <div className="flex-col gap-md animate-fade-in pb-xl">
-           <div className="flex justify-between items-end mb-xs">
-             <div className="flex-col">
-               <h2 className="text-3xl font-light text-white">{selectedComp} Guide</h2>
-               <p className="text-sm text-secondary tracking-wide">Based on {vialMg}mg / {waterMl}ml mixture</p>
-             </div>
-           </div>
+      {/* ========== STEP 2: Configure Each Compound ========== */}
+      {step === 2 && currentData && (
+        <div className="flex-col gap-md animate-fade-in overflow-y-auto hide-scrollbar pb-[100px]">
+          {/* Compound Header */}
+          <div className="flex items-center gap-md">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: currentData.color }}>
+              <Beaker size={20} className="text-white" />
+            </div>
+            <div className="flex-col">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-secondary">{currentCompIdx + 1} of {selectedComps.length}</span>
+              <h2 className="text-2xl font-light text-white">{currentComp}</h2>
+            </div>
+          </div>
 
-           <div className="glass-panel p-md border-white/10 flex-col gap-md rounded-xl bg-black/40">
-             <div className="flex items-center gap-sm text-accent-light">
-               <Moon size={20} />
-               <span className="font-semibold text-sm uppercase tracking-wider">Protocol Overview</span>
-             </div>
-             <p className="text-[15px] text-white leading-relaxed">{compData.desc}</p>
-             <p className="text-sm text-secondary leading-relaxed bg-black/60 p-md rounded-lg border border-white/5">
-               <strong className="text-white block mb-[2px]">Timing:</strong> {compData.time}
-             </p>
-           </div>
+          {/* What it does */}
+          <div className="glass-card flex-col gap-sm border-white/5" style={{ background: '#0a0a0c', padding: '20px' }}>
+            <div className="flex items-center gap-sm text-accent-light">
+              <BookOpen size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">About This Compound</span>
+            </div>
+            <p className="text-sm text-secondary leading-relaxed">{currentData.desc}</p>
+            <p className="text-sm text-secondary leading-relaxed"><strong className="text-white">Best Time:</strong> {currentData.timing}</p>
+            <p className="text-sm text-secondary leading-relaxed"><strong className="text-white">Administration:</strong> {currentData.administration}</p>
+          </div>
 
-           <h3 className="text-lg font-medium mt-md px-sm text-white">Select Dosage Tier</h3>
-           
-           <div className="flex-col gap-sm">
-             {/* Low */}
-             <div className="glass-card p-md border-white/10 flex justify-between items-center cursor-pointer hover:bg-white/5 transition-colors" onClick={() => navigate('/app/today')}>
-               <div className="flex-col gap-xs">
-                 <span className="font-semibold text-white">Low</span>
-                 <span className="text-[11px] text-secondary uppercase tracking-wider">{compData.doses.low.desc} ({compData.doses.low.mcg}mcg)</span>
-               </div>
-               <div className="flex-col items-end">
-                 <span className="text-2xl font-light text-white">{getUnits(compData.doses.low.mcg)}</span>
-                 <span className="text-[10px] text-secondary font-medium">UNITS</span>
-               </div>
-             </div>
-             
-             {/* Med */}
-             <div className="glass-card p-md border-accent/40 bg-accent/10 flex justify-between items-center cursor-pointer hover:bg-accent/20 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.1)]" onClick={() => navigate('/app/today')}>
-               <div className="flex-col gap-xs">
-                 <span className="font-semibold text-white flex items-center gap-sm">Medium <span className="bg-accent text-[9px] px-[8px] py-[3px] rounded-full text-white tracking-widest leading-none">RECOMMENDED</span></span>
-                 <span className="text-[11px] text-accent-light uppercase tracking-wider">{compData.doses.med.desc} ({compData.doses.med.mcg}mcg)</span>
-               </div>
-               <div className="flex-col items-end text-accent-light">
-                 <span className="text-2xl font-bold">{getUnits(compData.doses.med.mcg)}</span>
-                 <span className="text-[10px] font-medium">UNITS</span>
-               </div>
-             </div>
+          {/* Reconstitution inputs */}
+          <div className="glass-card flex-col gap-md border-white/5 mt-sm" style={{ background: '#0d0d0f', padding: '20px' }}>
+            <div className="flex items-center gap-sm text-accent-light mb-xs">
+              <Info size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Reconstitution Setup</span>
+            </div>
+            <p className="text-xs text-secondary leading-relaxed mb-sm">{currentData.reconstitution}</p>
+            
+            <div className="flex-col gap-[4px]">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-secondary pl-xs">Vial Size</label>
+              <div className="flex items-center bg-white/5 rounded-xl border border-white/5" style={{ padding: '14px 16px' }}>
+                <input type="number" value={currentConfig.vialMg} onChange={e => updateConfig(currentComp, 'vialMg', e.target.value)} style={{ background: 'transparent', border: 'none', width: '100%', outline: 'none', padding: 0, fontSize: '1.1rem', color: '#fff', fontWeight: 500 }} />
+                <span className="text-secondary font-medium text-sm ml-sm">mg</span>
+              </div>
+            </div>
+            <div className="flex-col gap-[4px]">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-secondary pl-xs">Bacteriostatic Water</label>
+              <div className="flex items-center bg-white/5 rounded-xl border border-white/5" style={{ padding: '14px 16px' }}>
+                <input type="number" value={currentConfig.waterMl} onChange={e => updateConfig(currentComp, 'waterMl', e.target.value)} style={{ background: 'transparent', border: 'none', width: '100%', outline: 'none', padding: 0, fontSize: '1.1rem', color: '#fff', fontWeight: 500 }} />
+                <span className="text-secondary font-medium text-sm ml-sm">ml</span>
+              </div>
+            </div>
+          </div>
 
-             {/* High Risk */}
-             <div className="glass-card p-md border-danger/30 bg-danger/10 flex justify-between items-center cursor-pointer hover:bg-danger/20 transition-colors relative overflow-hidden" onClick={() => navigate('/app/today')}>
-               <div className="absolute top-0 left-0 w-[4px] h-full bg-danger"></div>
-               <div className="flex-col gap-xs pl-sm">
-                 <span className="font-semibold text-danger flex items-center gap-xs"><AlertTriangle size={16}/> High Risk</span>
-                 <span className="text-[11px] text-danger/80 uppercase tracking-wider">{compData.doses.high.desc} ({compData.doses.high.mcg}mcg)</span>
-               </div>
-               <div className="flex-col items-end text-danger">
-                 <span className="text-2xl font-medium">{getUnits(compData.doses.high.mcg)}</span>
-                 <span className="text-[10px] font-medium">UNITS</span>
-               </div>
-             </div>
-           </div>
+          {/* Auto-calculated Dose Tiers */}
+          <div className="flex-col gap-sm mt-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-secondary pl-xs">Select Dosage — Auto-Calculated</span>
+            {Object.entries(currentData.doses).map(([tier, data]) => {
+              const tierDraw = calcDrawVolume(data.mcg, concentration);
+              const tierUnits = calcSyringeUnits(tierDraw);
+              const dosesVial = calcDosesPerVial(parseFloat(currentConfig.vialMg || 0), data.mcg);
+              const isHigh = tier === 'high';
+              const isMed = tier === 'med';
+              const isSelected = currentConfig.tier === tier;
+              return (
+                <div 
+                  key={tier}
+                  className="glass-card flex justify-between items-center cursor-pointer transition-all"
+                  onClick={() => updateConfig(currentComp, 'tier', tier)}
+                  style={{ 
+                    padding: '18px 20px',
+                    borderColor: isSelected ? (isHigh ? 'var(--danger)' : isMed ? 'var(--accent)' : 'rgba(255,255,255,0.2)') : 'rgba(255,255,255,0.05)',
+                    background: isSelected ? (isHigh ? 'rgba(255,69,58,0.08)' : isMed ? 'rgba(168,85,247,0.08)' : 'rgba(255,255,255,0.05)') : 'rgba(0,0,0,0.2)',
+                    transform: isSelected ? 'scale(1.01)' : 'scale(1)'
+                  }}
+                >
+                  <div className="flex-col gap-[3px]">
+                    <span className={`font-semibold text-sm ${isHigh ? 'text-danger' : isMed ? 'text-accent-light' : 'text-white'}`}>
+                      {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                      {isMed && <span className="text-[8px] bg-accent/30 px-[6px] py-[2px] rounded-full ml-sm text-accent-light tracking-widest">RECOMMENDED</span>}
+                      {isHigh && <span className="text-[8px] bg-danger/30 px-[6px] py-[2px] rounded-full ml-sm text-danger tracking-widest">⚠ RISK</span>}
+                    </span>
+                    <span className="text-[11px] text-secondary">{data.label} • {data.mcg}mcg</span>
+                    <span className="text-[10px] text-secondary mt-[2px]">{data.risk}</span>
+                  </div>
+                  <div className="flex-col items-end">
+                    <span className={`text-2xl font-semibold ${isHigh ? 'text-danger' : isMed ? 'text-accent-light' : 'text-white'}`}>
+                      {concentration > 0 ? tierUnits.toFixed(1) : '—'}
+                    </span>
+                    <span className="text-[9px] text-secondary font-medium">UNITS</span>
+                    <span className="text-[9px] text-secondary mt-[2px]">{dosesVial > 0 ? Math.floor(dosesVial) : '—'} doses/vial</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-           <div className="bg-black/50 p-md rounded-xl mt-sm flex gap-sm items-start border border-danger/20">
-             <AlertTriangle size={20} className="text-danger flex-shrink-0" />
-             <p className="text-xs text-secondary leading-relaxed">
-               <strong className="text-danger">Safety Notice:</strong> High dosages carry elevated risks of side effects including injection site reactions and systemic fatigue. The OS explicitly recommends starting at the Low or Medium tier and monitoring biological response before titrating up.
-             </p>
-           </div>
-           
-           <div style={{ height: '80px' }}></div>
+          {/* High Risk Warning */}
+          {currentConfig.tier === 'high' && (
+            <div className="flex items-start gap-md bg-danger/10 border border-danger/30 rounded-xl p-md mt-sm animate-fade-in">
+              <AlertTriangle size={20} className="text-danger flex-shrink-0 mt-[2px]" />
+              <p className="text-xs text-danger/90 leading-relaxed">
+                <strong>High Risk Warning:</strong> {currentData.doses.high.risk} The OS strongly recommends starting at Low or Medium and monitoring your response for at least 2 weeks before titrating up.
+              </p>
+            </div>
+          )}
+
+          {/* Next / Done */}
+          <button 
+            className="btn-primary mt-lg shadow-2xl"
+            style={{ padding: '18px' }}
+            onClick={() => {
+              if (currentCompIdx < selectedComps.length - 1) {
+                setCurrentCompIdx(currentCompIdx + 1);
+              } else {
+                setStep(3);
+              }
+            }}
+          >
+            {currentCompIdx < selectedComps.length - 1 ? `Next: ${selectedComps[currentCompIdx + 1]} →` : 'Review Full Stack →'}
+          </button>
         </div>
       )}
+
+      {/* ========== STEP 3: Review & Save ========== */}
+      {step === 3 && (
+        <div className="flex-col gap-md animate-fade-in overflow-y-auto hide-scrollbar pb-[100px]">
+          <h2 className="text-3xl font-light text-white mb-xs">Review Stack</h2>
+          <p className="text-sm text-secondary mb-sm">Your protocol is ready. Review the auto-calculated details below and save.</p>
+
+          {selectedComps.map(comp => {
+            const data = peptidesDB[comp];
+            const cfg = getConfig(comp);
+            const tierData = data.doses[cfg.tier];
+            const conc = calcConcentration(parseFloat(cfg.vialMg || 0), parseFloat(cfg.waterMl || 0));
+            const tierUnits = calcSyringeUnits(calcDrawVolume(tierData.mcg, conc));
+            const vialsNeeded = calcVialsNeeded(tierData.mcg, data.schedule === 'Daily' ? 7 : data.schedule === 'Weekly' ? 1 : data.schedule === '2x per week' ? 2 : 5, data.typicalCycle, parseFloat(cfg.vialMg));
+            
+            return (
+              <div key={comp} className="glass-card flex-col gap-sm border-white/5" style={{ padding: '20px', borderLeft: `3px solid ${data.color}` }}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-col">
+                    <span className="text-lg font-medium text-white">{comp}</span>
+                    <span className="text-[11px] text-secondary">{data.schedule} • {data.typicalCycle} weeks</span>
+                  </div>
+                  <div className="flex-col items-end">
+                    <span className="text-2xl font-semibold text-white">{tierUnits.toFixed(1)}</span>
+                    <span className="text-[9px] text-secondary">UNITS / dose</span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-xs flex-wrap mt-xs">
+                  <span className="bg-white/5 border border-white/5 px-sm py-[3px] rounded text-[10px] text-secondary">{tierData.mcg}mcg {cfg.tier}</span>
+                  <span className="bg-white/5 border border-white/5 px-sm py-[3px] rounded text-[10px] text-secondary">{cfg.vialMg}mg / {cfg.waterMl}ml</span>
+                  <span className="bg-white/5 border border-white/5 px-sm py-[3px] rounded text-[10px] text-secondary">{vialsNeeded} vials needed</span>
+                </div>
+
+                <p className="text-[11px] text-secondary mt-xs leading-relaxed"><strong className="text-white">Timing:</strong> {data.timing}</p>
+              </div>
+            );
+          })}
+
+          <button className="btn-primary mt-lg shadow-2xl" style={{ padding: '18px' }} onClick={saveProtocol}>
+            Save Protocol & Start Tracking
+          </button>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}} />
     </div>
   );
 }
