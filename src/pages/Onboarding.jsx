@@ -103,7 +103,7 @@ export default function Onboarding() {
           <div className="flex-col gap-sm mt-sm overflow-y-auto pb-lg hide-scrollbar">
             <GoalCard 
               icon={<BookOpen size={24} />} title="Learn Peptides" 
-              active={firstAction === 'library'} onClick={() => { setFirstAction('library'); nextStep(); }}
+              active={firstAction === 'learn'} onClick={() => { setFirstAction('learn'); nextStep(); }}
             />
             <GoalCard 
               icon={<Calculator size={24} />} title="Calculate a Dose" 

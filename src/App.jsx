@@ -10,6 +10,7 @@ import Library from './pages/Library';
 import Shop from './pages/Shop';
 import Onboarding from './pages/Onboarding';
 import ProtocolBuilder from './pages/ProtocolBuilder';
+import Learn from './pages/Learn';
 
 function App() {
   const hasCompletedOnboarding = localStorage.getItem('onboardingComplete') === 'true';
@@ -29,6 +30,7 @@ function App() {
                   <Route path="library" element={<Library />} />
                   <Route path="shop" element={<Shop />} />
                   <Route path="protocol-wizard" element={<ProtocolBuilder />} />
+                  <Route path="learn" element={<Learn />} />
                   <Route path="*" element={<Navigate to="today" replace />} />
                 </Routes>
               </div>
