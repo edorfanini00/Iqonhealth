@@ -19,7 +19,6 @@ export const peptidesDB = {
     reconstitution: "Add bacteriostatic water slowly along the inside glass wall of the vial. Never spray directly on the powder. Swirl very gently — never shake. Solution must be perfectly clear before use. Store in refrigerator (2–8°C) after reconstitution. Discard after 28 days.",
     // Research basis: Animal studies use ~10 mcg/kg. Wellness clinics commonly prescribe 200–800 mcg/day for humans.
     // Weight-based: ~2.5–10 mcg/kg/day is the extrapolated range.
-    weightBased: { mcgPerKg: { low: 2.5, med: 5, high: 10 } },
     doses: {
       low:  { mcg: 250, label: "Maintenance / Mild Support", risk: "Very well-tolerated. Minimal side effects expected. Good starting point for first-time users.", source: "Common wellness clinic starting dose" },
       med:  { mcg: 500, label: "Standard Healing Protocol", risk: "Well-tolerated. Mild injection-site redness possible. Most commonly prescribed dose in clinical settings.", source: "Standard wellness clinic protocol" },
@@ -38,7 +37,6 @@ export const peptidesDB = {
     color: "#6366f1",
     reconstitution: "Standard reconstitution with bacteriostatic water. Aim water along the glass wall. Swirl gently. Store refrigerated. Use within 28 days.",
     // Research basis: Loading phase 2–5mg 2x/week for 4–6 weeks, then maintenance 2–5mg 1x/week.
-    weightBased: null, // TB-500 is typically flat-dosed, not weight-based
     doses: {
       low:  { mcg: 2000, label: "Maintenance Phase (post-loading)", risk: "Well-tolerated at this dose. Suitable for ongoing maintenance after initial loading.", source: "Standard maintenance protocol" },
       med:  { mcg: 5000, label: "Loading Phase — Standard", risk: "Mild lethargy or brief head rush possible in first few injections. Generally well-tolerated.", source: "Common loading phase dose (2x/week)" },
@@ -57,7 +55,6 @@ export const peptidesDB = {
     color: "#ec4899",
     reconstitution: "If using lyophilized powder: reconstitute with 2ml bacteriostatic water. Some compounding pharmacies ship pre-mixed solutions. Store refrigerated.",
     // FDA titration: Start 2.5mg x4wks → 5mg x4wks → 7.5mg → 10mg → 12.5mg → max 15mg
-    weightBased: null, // Tirzepatide follows fixed titration, not weight-based
     doses: {
       low:  { mcg: 2500, label: "Starting Titration (Weeks 1–4)", risk: "Nausea is common in first 1–2 weeks — this is normal and expected. Eat slowly, stay well-hydrated, avoid large fatty meals.", source: "FDA-approved starting dose (Mounjaro/Zepbound)" },
       med:  { mcg: 5000, label: "Standard Maintenance (Weeks 5–8)", risk: "GI side effects (nausea, constipation) may reappear at titration. Stay at this dose 4+ weeks before increasing.", source: "FDA titration step 2" },
@@ -76,7 +73,6 @@ export const peptidesDB = {
     color: "#f43f5e",
     reconstitution: "If using lyophilized powder: reconstitute with 2ml bacteriostatic water along the glass wall. Swirl gently. Refrigerate after mixing.",
     // FDA Wegovy titration: 0.25mg→0.5mg→1.0mg→1.7mg→2.4mg (each step 4 weeks)
-    weightBased: null, // Fixed titration schedule
     doses: {
       low:  { mcg: 250, label: "Starting Titration (Weeks 1–4)", risk: "Mild nausea expected. Eat smaller meals. Stay hydrated. This is the standard medical starting dose.", source: "FDA-approved Wegovy starting dose (0.25mg)" },
       med:  { mcg: 500, label: "Titration Step 2 (Weeks 5–8)", risk: "GI effects may increase temporarily. If persistent, stay at this dose an extra 4 weeks before escalating.", source: "FDA Wegovy dose escalation (0.5mg)" },
@@ -95,7 +91,6 @@ export const peptidesDB = {
     color: "#14b8a6",
     reconstitution: "Standard reconstitution. Add bacteriostatic water along the inside wall of the vial. Swirl gently. Refrigerate. Use within 21 days for best potency.",
     // Common: 100–300mcg of each peptide per administration. Often 100mcg each for beginners.
-    weightBased: { mcgPerKg: { low: 1.5, med: 2.5, high: 4 } },
     doses: {
       low:  { mcg: 100, label: "Introductory / Sleep-Focused", risk: "Very well-tolerated. Vivid dreams are common and expected. Mild tingling in fingertips possible.", source: "Standard beginner protocol (100mcg each)" },
       med:  { mcg: 200, label: "Standard Body Recomp", risk: "Mild water retention and occasional hand/wrist tingling possible. Generally well-tolerated.", source: "Standard clinical protocol (200mcg each)" },
@@ -113,7 +108,6 @@ export const peptidesDB = {
     typicalCycle: 8, // Often cycled 30-60 days on, then an equal off period
     color: "#3b82f6", // Blue
     reconstitution: "Add bacteriostatic water carefully. The solution will turn bright blue. Store refrigerated. If experiencing injection site pain, dilute with more water or inject deeper SubQ.",
-    weightBased: null,
     doses: {
       low:  { mcg: 1000, label: "Starting Dose (1mg)", risk: "Well tolerated. Lowest risk of copper accumulation or injection site pain.", source: "Conservative research protocol" },
       med:  { mcg: 2000, label: "Standard Dose (2mg)", risk: "Standard effective dose for skin/healing. Monitor for injection site irritation.", source: "Standard wellness protocol" },
@@ -131,7 +125,6 @@ export const peptidesDB = {
     typicalCycle: 4,
     color: "#eab308", // Yellow
     reconstitution: "Standard reconstitution. Store refrigerated. Degrades quickly if exposed to heat or vigorous shaking.",
-    weightBased: null,
     doses: {
       low:  { mcg: 150, label: "Threshold / Subtle Focus", risk: "Very low risk. Good starting dose to test sensitivity.", source: "Threshold cognitive dose" },
       med:  { mcg: 300, label: "Standard Nootropic Dose", risk: "Clean focus and energy. Can cause mild anxiety in sensitive individuals.", source: "Standard cognitive protocol" },
@@ -149,7 +142,6 @@ export const peptidesDB = {
     typicalCycle: 4,
     color: "#22c55e", // Green
     reconstitution: "Standard reconstitution with bacteriostatic water. Keep refrigerated.",
-    weightBased: null,
     doses: {
       low:  { mcg: 250, label: "Mild Anxiety / Baseline", risk: "Very well tolerated. No sedative effects.", source: "Standard starting protocol" },
       med:  { mcg: 500, label: "Standard Anxiolytic Dose", risk: "Effective for managing daily stress. Some users split this into 250mcg twice daily.", source: "Common clinical recommendation" },
@@ -167,7 +159,6 @@ export const peptidesDB = {
     typicalCycle: 12,
     color: "#0ea5e9", // Light blue
     reconstitution: "Standard reconstitution. Store refrigerated.",
-    weightBased: { mcgPerKg: { low: 1.5, med: 2.5, high: 4 } },
     doses: {
       low:  { mcg: 100, label: "Anti-Aging / Sleep", risk: "Very well tolerated. Often combined with CJC-1295.", source: "Conservative starting dose" },
       med:  { mcg: 200, label: "Standard Optimization", risk: "Standard dose for body recomp and recovery. Mild tingling possible.", source: "Standard clinical protocol" },
@@ -185,7 +176,6 @@ export const peptidesDB = {
     typicalCycle: 8,
     color: "#f59e0b", // Amber
     reconstitution: "Standard reconstitution. Solution may be blue due to GHK-Cu. If injection stings, dilute with additional bacteriostatic water.",
-    weightBased: null,
     doses: {
       low:  { mcg: 500, label: "Starter Dose", risk: "Lowest risk of injection site pain.", source: "Introductory blend dose" },
       med:  { mcg: 1000, label: "Standard Dose", risk: "Monitor injection sites for redness/swelling due to copper content.", source: "Standard clinical blend dose" },

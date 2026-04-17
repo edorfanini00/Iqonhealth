@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import BottomNav from './components/BottomNav';
+import SwissBanner from './components/SwissBanner';
 
 // Pages
 import Today from './pages/Today';
@@ -18,6 +19,7 @@ function App() {
   return (
     <Router>
       <div className="flex-col h-full w-full">
+        <SwissBanner />
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/app/*" element={

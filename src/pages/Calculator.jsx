@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Beaker, Save, ChevronDown, ArrowRight, Package, BookOpen, AlertTriangle } from 'lucide-react';
-import { peptidesDB, calcConcentration, calcDrawVolume, calcSyringeUnits, calcDosesPerVial, calcVialsNeeded, lbsToKg, kgToLbs } from '../data/peptides';
+import { peptidesDB, calcConcentration, calcDrawVolume, calcSyringeUnits, calcDosesPerVial, calcVialsNeeded } from '../data/peptides';
 
 const compoundNames = Object.keys(peptidesDB);
 
@@ -11,26 +11,12 @@ export default function Calculator() {
   const [compound, setCompound] = useState('BPC-157');
   const [vialMg, setVialMg] = useState('5');
   const [waterMl, setWaterMl] = useState('2');
-  const [weightVal, setWeightVal] = useState('80');
-  const [weightUnit, setWeightUnit] = useState('kg');
   const [supplyWeeks, setSupplyWeeks] = useState('8');
   const [dosesPerWeek, setDosesPerWeek] = useState('7');
   const [showPicker, setShowPicker] = useState(false);
 
   const compData = peptidesDB[compound];
-  const weightKg = weightUnit === 'lbs' ? lbsToKg(parseFloat(weightVal || 0)) : parseFloat(weightVal || 0);
   const concentration = calcConcentration(parseFloat(vialMg || 0), parseFloat(waterMl || 0));
-
-  const toggleWeightUnit = () => {
-    const current = parseFloat(weightVal || 0);
-    if (weightUnit === 'kg') {
-      setWeightUnit('lbs');
-      setWeightVal(kgToLbs(current).toFixed(0));
-    } else {
-      setWeightUnit('kg');
-      setWeightVal(lbsToKg(current).toFixed(0));
-    }
-  };
 
   return (
     <div style={{ padding: '24px', paddingTop: '48px', display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '140px' }}>
@@ -128,38 +114,6 @@ export default function Calculator() {
           <div style={{ background: '#0d0d0f', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <InputRow label="Vial Size" value={vialMg} onChange={setVialMg} unit="mg" />
             <InputRow label="Bacteriostatic Water" value={waterMl} onChange={setWaterMl} unit="ml" />
-            
-            {/* Weight with toggle */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)', paddingLeft: '4px' }}>Body Weight</label>
-                <button 
-                  onClick={toggleWeightUnit}
-                  style={{
-                    background: 'rgba(168,85,247,0.15)',
-                    border: '1px solid rgba(168,85,247,0.3)',
-                    borderRadius: '999px',
-                    padding: '4px 12px',
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    color: '#c084fc',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    letterSpacing: '1px'
-                  }}
-                >
-                  {weightUnit === 'kg' ? 'Switch to lbs' : 'Switch to kg'}
-                </button>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', padding: '14px 16px' }}>
-                <input 
-                  type="number" value={weightVal} onChange={e => setWeightVal(e.target.value)}
-                  style={{ background: 'transparent', border: 'none', width: '100%', outline: 'none', padding: 0, fontSize: '1.1rem', color: '#fff', fontWeight: 500, fontFamily: 'inherit' }}
-                  placeholder="0"
-                />
-                <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 500, fontSize: '0.875rem', marginLeft: '8px', flexShrink: 0 }}>{weightUnit}</span>
-              </div>
-            </div>
           </div>
 
           {/* Concentration Result */}
@@ -181,15 +135,10 @@ export default function Calculator() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
               <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '1.5px', color: 'rgba(255,255,255,0.4)', paddingLeft: '4px', textTransform: 'uppercase' }}>
                 Auto-Calculated Dosages for {compound}
-                {compData.weightBased && weightKg > 0 && <span style={{ color: '#c084fc' }}> • {weightKg.toFixed(0)}kg</span>}
               </span>
 
               {Object.entries(compData.doses).map(([tier, data]) => {
-                // If weight-based + weight provided, use weight calc. Otherwise use fixed dose.
-                let doseMcg = data.mcg;
-                if (compData.weightBased && weightKg > 0) {
-                  doseMcg = Math.round(weightKg * compData.weightBased.mcgPerKg[tier]);
-                }
+                const doseMcg = data.mcg;
 
                 const drawMl = calcDrawVolume(doseMcg, concentration);
                 const units = calcSyringeUnits(drawMl);
