@@ -9,8 +9,8 @@ import { Platform } from 'react-native';
 // Copy your Project URL and anon/public key below.
 // ═══════════════════════════════════════════════════════════════
 
-const SUPABASE_URL = 'https://pkmewannomgivudbmseq.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrbWV3YW5ub21naXZ1ZGJtc2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyMTMzNjYsImV4cCI6MjA5MTc4OTM2Nn0.QFAwNTQX00tEh-1eSBHf44hvISunetNmidx_xwRLbNg';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 // Safe storage adapter that won't crash during SSR/web builds
 const createStorageAdapter = () => {

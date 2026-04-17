@@ -231,7 +231,9 @@ export default function Today() {
         {/* Header */}
         <View style={s.header}>
           <View>
-            <Image source={require('@/assets/images/iqon-logo.png')} style={s.brandLogo} resizeMode="contain" />
+            <View style={s.logoClip}>
+              <Image source={require('@/assets/images/iqon-logo.png')} style={s.brandLogo} resizeMode="contain" />
+            </View>
             <Text style={s.subtitle}>{displayDate}</Text>
           </View>
           <TouchableOpacity style={s.profileBtn} activeOpacity={0.7}>
@@ -503,9 +505,10 @@ const s = StyleSheet.create({
   scrollContent: { padding: Spacing.lg, paddingTop: 60 },
 
   // Header
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: Spacing.xl },
   brandName: { fontSize: 28, fontWeight: '700', color: Colors.textPrimary, letterSpacing: 2 },
-  brandLogo: { width: 100, height: 32 },
+  logoClip: { width: 95, height: 38, overflow: 'hidden' },
+  brandLogo: { width: 200, height: 200, marginLeft: -56, marginTop: -78 },
   subtitle: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },
   profileBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.cardDark, alignItems: 'center', justifyContent: 'center' },
 

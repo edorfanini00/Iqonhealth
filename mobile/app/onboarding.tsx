@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  Dimensions, Animated, Platform,
+  Dimensions, Animated, Platform, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/auth';
@@ -95,9 +95,7 @@ export default function Onboarding() {
         {/* ── Step 1: Welcome ── */}
         <View style={s.slide}>
           <View style={s.slideContent}>
-            <View style={s.iconCircle}>
-              <Droplets size={40} color={Colors.textPrimary} />
-            </View>
+            <Image source={require('@/assets/images/iqon-logo.png')} style={s.welcomeLogo} resizeMode="contain" />
             <Text style={s.slideTitle}>Welcome to IQON</Text>
             <Text style={s.slideDesc}>
               Your personal peptide companion. We'll ask a few questions to personalize your experience.
@@ -283,6 +281,12 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+  },
+
+  welcomeLogo: {
+    width: 280,
+    height: 90,
+    marginBottom: 28,
   },
 
   slideTitle: {
