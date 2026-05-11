@@ -107,24 +107,26 @@ function PeptideCard({ name, data, router }) {
 
   return (
     <TouchableOpacity style={s.peptideCard} onPress={() => setExpanded(!expanded)} activeOpacity={0.8}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+        {/* Left: dot + name + category */}
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={[s.colorDot, { backgroundColor: data.color }]} />
-            <Text style={{ fontSize: 20, fontWeight: '600', color: Colors.textPrimary }}>{name}</Text>
+            <View style={[s.colorDot, { backgroundColor: data.color, flexShrink: 0 }]} />
+            <Text style={{ fontSize: 20, fontWeight: '600', color: Colors.textPrimary, flex: 1 }} numberOfLines={2}>{name}</Text>
           </View>
           <Text style={{ fontSize: 13, fontWeight: '500', color: Colors.textSecondary, marginTop: 4, marginLeft: 20 }}>{data.category}</Text>
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {/* Right: risk badge + chevron — never overlaps name */}
+        <View style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+          <View style={s.chevronBtn}>
+            <ChevronDown size={16} color={Colors.textSecondary} style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
+          </View>
           {overallRisk !== 'standard' && (
             <View style={[s.riskBadge, { backgroundColor: getRiskColor(overallRisk) + '18' }]}>
               <AlertTriangle size={10} color={getRiskColor(overallRisk)} />
               <Text style={[s.riskBadgeText, { color: getRiskColor(overallRisk) }]}>{getRiskLabel(overallRisk)}</Text>
             </View>
           )}
-          <View style={s.chevronBtn}>
-            <ChevronDown size={16} color={Colors.textSecondary} style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
-          </View>
         </View>
       </View>
 
@@ -148,12 +150,12 @@ function PeptideCard({ name, data, router }) {
           <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.textPrimary, textTransform: 'uppercase', letterSpacing: 1 }}>Dosing Tiers</Text>
           {Object.entries(data.doses).map(([tier, dose]) => (
             <View key={tier} style={[s.doseTierCard, { borderLeftColor: getRiskColor(dose.riskLevel) }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                <View style={{ flex: 1 }}>
                   <Text style={s.doseTierName}>{dose.label}</Text>
                   <Text style={s.doseTierMcg}>{dose.mcg >= 1000 ? `${(dose.mcg / 1000).toFixed(dose.mcg % 1000 === 0 ? 0 : 1)}mg` : `${dose.mcg}mcg`}</Text>
                 </View>
-                <View style={[s.riskPill, { backgroundColor: getRiskColor(dose.riskLevel) + '18' }]}>
+                <View style={[s.riskPill, { backgroundColor: getRiskColor(dose.riskLevel) + '18', flexShrink: 0 }]}>
                   <Text style={[s.riskPillText, { color: getRiskColor(dose.riskLevel) }]}>{getRiskLabel(dose.riskLevel)}</Text>
                 </View>
               </View>

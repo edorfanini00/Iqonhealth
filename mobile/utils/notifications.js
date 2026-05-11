@@ -18,7 +18,7 @@ Notifications.setNotificationHandler({
 // Request permission
 export async function registerForNotifications() {
   if (!Device.isDevice) {
-    console.log('Notifications require a physical device');
+    // Notifications require a physical device
     return false;
   }
 
@@ -31,7 +31,6 @@ export async function registerForNotifications() {
   }
 
   if (finalStatus !== 'granted') {
-    console.log('Notification permission not granted');
     return false;
   }
 
@@ -96,7 +95,7 @@ export async function scheduleDoseReminder(compound, doseTime, frequency, userNa
       });
     }
   } catch (err) {
-    console.log('Failed to schedule notification:', err);
+    // Failed to schedule — silently ignore in production
   }
 }
 
@@ -110,7 +109,7 @@ export async function cancelDoseReminder(compound) {
       }
     }
   } catch (err) {
-    console.log('Failed to cancel notification:', err);
+    // Failed to cancel — silently ignore in production
   }
 }
 

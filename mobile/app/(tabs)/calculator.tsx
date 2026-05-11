@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronDown, ArrowRight, BookOpen } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme';
 import { peptidesDB, calcConcentration, calcDrawVolume, calcSyringeUnits, calcDosesPerVial, calcVialsNeeded } from '@/data/peptides';
 
@@ -16,6 +17,7 @@ export default function CalculatorScreen() {
   const [supplyWeeks, setSupplyWeeks] = useState('8');
   const [dosesPerWeek, setDosesPerWeek] = useState('7');
   const [showPicker, setShowPicker] = useState(false);
+  const [expandedTier, setExpandedTier] = useState<string | null>(null);
 
   const compData = peptidesDB[compound];
   const concentration = calcConcentration(parseFloat(vialMg || 0), parseFloat(waterMl || 0));
@@ -87,16 +89,16 @@ export default function CalculatorScreen() {
           </View>
 
           {concentration > 0 && (
-            <View style={s.resultRow}>
+            <LinearGradient colors={['#2a2a2e', '#3a3a40', '#4a4a50']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.resultRow}>
               <View>
                 <Text style={s.resultLabel}>Concentration</Text>
                 <Text style={s.resultValue}>{(concentration / 1000).toFixed(2)} <Text style={s.resultUnit}>mg/ml</Text></Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={s.resultLabel}>{concentration.toFixed(0)}</Text>
-                <Text style={{ fontSize: 11, color: Colors.textInverseSec }}>mcg per ml</Text>
+                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>mcg per ml</Text>
               </View>
-            </View>
+            </LinearGradient>
           )}
 
           {concentration > 0 && compData && (
@@ -109,9 +111,10 @@ export default function CalculatorScreen() {
                 const dosesVial = calcDosesPerVial(parseFloat(vialMg), doseMcg);
                 const isHigh = tier === 'high';
                 const isMed = tier === 'med';
+                const isExpanded = expandedTier === tier;
 
                 return (
-                  <View key={tier} style={[s.tierCard, isHigh && s.tierCardHigh, isMed && s.tierCardMed]}>
+                  <TouchableOpacity key={tier} style={[s.tierCard, isHigh && s.tierCardHigh, isMed && s.tierCardMed]} activeOpacity={0.7} onPress={() => setExpandedTier(isExpanded ? null : tier)}>
                     {isHigh && <View style={[s.tierStripe, { backgroundColor: Colors.danger }]} />}
                     {isMed && <View style={[s.tierStripe, { backgroundColor: Colors.textPrimary }]} />}
                     <View style={{ flex: 1, paddingLeft: (isHigh || isMed) ? 8 : 0, paddingRight: 16 }}>
@@ -121,39 +124,78 @@ export default function CalculatorScreen() {
                         </Text>
                         {isMed && <View style={s.recBadge}><Text style={s.recBadgeText}>RECOMMENDED</Text></View>}
                         {isHigh && <View style={[s.recBadge, { backgroundColor: 'rgba(239,68,68,0.1)' }]}><Text style={[s.recBadgeText, { color: Colors.danger }]}>⚠ CAUTION</Text></View>}
+                        <View style={{ flex: 1 }} />
+                        <ChevronDown size={14} color={Colors.grey400} style={{ transform: [{ rotate: isExpanded ? '180deg' : '0deg' }] }} />
                       </View>
                       <Text style={{ fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>{data.label}</Text>
-                      <Text style={{ fontSize: 12, color: isHigh ? Colors.danger : Colors.textPrimary, marginTop: 4, lineHeight: 18 }}>{data.risk}</Text>
-                      <Text style={{ fontSize: 10, color: Colors.textSecondary, marginTop: 2, fontStyle: 'italic' }}>{data.source}</Text>
+                      {isExpanded && (
+                        <View style={{ marginTop: 8 }}>
+                          <Text style={{ fontSize: 12, color: isHigh ? Colors.danger : Colors.textPrimary, lineHeight: 18 }}>{data.risk}</Text>
+                          <Text style={{ fontSize: 10, color: Colors.textSecondary, marginTop: 4, fontStyle: 'italic' }}>{data.source}</Text>
+                          <Text style={{ fontSize: 11, color: Colors.textSecondary, marginTop: 6 }}>{Math.floor(dosesVial)} doses per vial</Text>
+                        </View>
+                      )}
                     </View>
                     <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
                       <Text style={[s.tierUnits, isHigh && { color: Colors.danger }]}>{units.toFixed(1)}</Text>
                       <Text style={{ fontSize: 9, color: Colors.textSecondary, fontWeight: '700', marginTop: 4 }}>UNITS</Text>
                       <Text style={{ fontSize: 11, color: Colors.textSecondary, marginTop: 8 }}>{doseMcg}mcg</Text>
-                      <Text style={{ fontSize: 10, color: Colors.textSecondary, marginTop: 2 }}>{Math.floor(dosesVial)} doses/vial</Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
           )}
 
-          {/* Reconstitution Guide */}
-          {compData && (
-            <View style={s.guideCard}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <BookOpen size={14} color={Colors.textPrimary} />
-                <Text style={{ fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: Colors.textPrimary }}>How to Reconstitute</Text>
+          {/* Reconstitution Guide — Collapsible */}
+          {compData && (() => {
+            const [reconOpen, setReconOpen] = React.useState(false);
+            const [infoExpanded, setInfoExpanded] = React.useState<string | null>(null);
+            const infoItems = [
+              { key: 'timing', label: 'Best Time', value: compData.timing, icon: '🕐' },
+              { key: 'schedule', label: 'Schedule', value: compData.schedule, icon: '📅' },
+              { key: 'admin', label: 'Administration', value: compData.administration, icon: '💉' },
+              { key: 'cycle', label: 'Typical Cycle', value: `${compData.typicalCycle} weeks`, icon: '🔄' },
+            ];
+
+            return (
+              <View style={s.guideCard}>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }} activeOpacity={0.7} onPress={() => setReconOpen(!reconOpen)}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <BookOpen size={14} color={Colors.textPrimary} />
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: Colors.textPrimary }}>How to Reconstitute</Text>
+                  </View>
+                  <ChevronDown size={14} color={Colors.grey400} style={{ transform: [{ rotate: reconOpen ? '180deg' : '0deg' }] }} />
+                </TouchableOpacity>
+
+                {reconOpen && (
+                  <View style={{ gap: 14, marginTop: 14 }}>
+                    <Text style={{ fontSize: 13, color: Colors.textSecondary, lineHeight: 20 }}>{compData.reconstitution}</Text>
+
+                    <View style={{ gap: 0 }}>
+                      {infoItems.map((item, i) => (
+                        <View key={item.key}>
+                          <TouchableOpacity
+                            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 13 }}
+                            activeOpacity={0.7}
+                            onPress={() => setInfoExpanded(infoExpanded === item.key ? null : item.key)}
+                          >
+                            <Text style={{ fontSize: 15, marginRight: 10 }}>{item.icon}</Text>
+                            <Text style={{ flex: 1, fontSize: 14, fontWeight: '500', color: Colors.textPrimary }}>{item.label}</Text>
+                            <ChevronDown size={14} color={Colors.grey400} style={{ transform: [{ rotate: infoExpanded === item.key ? '180deg' : '0deg' }] }} />
+                          </TouchableOpacity>
+                          {infoExpanded === item.key && (
+                            <Text style={{ fontSize: 13, color: Colors.textSecondary, lineHeight: 19, paddingBottom: 10, paddingLeft: 25 }}>{item.value}</Text>
+                          )}
+                          {i < infoItems.length - 1 && <View style={{ height: 1, backgroundColor: 'rgba(200,205,210,0.12)' }} />}
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
               </View>
-              <Text style={{ fontSize: 13, color: Colors.textSecondary, lineHeight: 22 }}>{compData.reconstitution}</Text>
-              <View style={{ borderTopWidth: 1, borderTopColor: Colors.grey200, paddingTop: 12, gap: 6 }}>
-                <InfoLine label="Best Time" value={compData.timing} />
-                <InfoLine label="Administration" value={compData.administration} />
-                <InfoLine label="Schedule" value={compData.schedule} />
-                <InfoLine label="Typical Cycle" value={`${compData.typicalCycle} weeks`} />
-              </View>
-            </View>
-          )}
+            );
+          })()}
 
           <TouchableOpacity style={s.actionBtn} onPress={() => router.push('/protocol-wizard')} activeOpacity={0.8}>
             <ArrowRight size={16} color={Colors.textInverse} />
@@ -211,14 +253,7 @@ function InputRow({ label, value, onChange, unit }) {
   );
 }
 
-function InfoLine({ label, value }) {
-  return (
-    <View style={{ flexDirection: 'row', gap: 8 }}>
-      <Text style={{ fontSize: 12, color: Colors.textSecondary, fontWeight: '600', minWidth: 90 }}>{label}:</Text>
-      <Text style={{ fontSize: 12, color: Colors.textPrimary, lineHeight: 18, flex: 1 }}>{value}</Text>
-    </View>
-  );
-}
+
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bgPrimary },
@@ -243,7 +278,7 @@ const s = StyleSheet.create({
   inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bgSecondary, borderRadius: 14, borderWidth: 1, borderColor: 'transparent', paddingHorizontal: 16, paddingVertical: 14 },
   input: { flex: 1, fontSize: 18, color: Colors.textPrimary, fontWeight: '600', padding: 0 },
   
-  resultRow: { backgroundColor: Colors.cardDark, borderRadius: Radius.xl, padding: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', ...Shadows.layered },
+  resultRow: { borderRadius: 18, padding: 22, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   resultLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.5, color: Colors.textInverseSec },
   resultValue: { fontSize: 24, fontWeight: '600', color: Colors.textInverse, marginTop: 4 },
   resultUnit: { fontSize: 14, fontWeight: '400', color: Colors.textInverseSec },
@@ -255,10 +290,14 @@ const s = StyleSheet.create({
   tierName: { fontWeight: '600', fontSize: 15, color: Colors.textPrimary },
   tierUnits: { fontSize: 28, fontWeight: '600', color: Colors.textPrimary, lineHeight: 28 },
   
-  recBadge: { backgroundColor: Colors.grey200, paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.full },
-  recBadgeText: { fontSize: 8, color: Colors.textPrimary, fontWeight: '700', letterSpacing: 1 },
+  recBadge: { backgroundColor: 'rgba(52,199,89,0.12)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: Radius.full },
+  recBadgeText: { fontSize: 8, color: '#34C759', fontWeight: '700', letterSpacing: 1 },
   
-  guideCard: { backgroundColor: Colors.grey100, borderRadius: Radius.xl, padding: 20, borderWidth: 1, borderColor: Colors.grey200, gap: 12, marginTop: 8 },
+  guideCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 18, marginTop: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 3 },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', borderTopWidth: 1, borderTopColor: Colors.grey200, marginTop: 4 },
+  infoGridItem: { width: '50%', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.grey200 },
+  infoLabel: { fontSize: 10, fontWeight: '600', color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 },
+  infoValue: { fontSize: 13, fontWeight: '500', color: Colors.textPrimary, lineHeight: 18 },
   actionBtn: { backgroundColor: Colors.cardDark, borderRadius: Radius.full, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, ...Shadows.layered },
   actionBtnText: { fontSize: 15, fontWeight: '600', color: Colors.textInverse },
   

@@ -1,8 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Platform, Alert } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import { supabase, isSupabaseConfigured } from '@/utils/supabase';
-import { getAuthUser, saveAuthUser, clearAuthUser } from '@/utils/storage';
+import { getAuthUser, saveAuthUser, clearAuthUser, isPaidUser, setPaidUser as storageSetPaid } from '@/utils/storage';
+
+WebBrowser.maybeCompleteAuthSession();
 
 // ═══════════════════════════════════════════════════════════════
 // Types
@@ -20,6 +24,8 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
+  isPaid: boolean;
+  setUserPaid: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (email: string, password: string, isSignUp: boolean) => Promise<void>;
@@ -31,6 +37,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  isPaid: false,
+  setUserPaid: async () => {},
   signInWithApple: async () => {},
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
@@ -48,7 +56,18 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPaid, setIsPaid] = useState(false);
   const useSupabase = isSupabaseConfigured();
+
+  // Load payment status from storage on mount
+  useEffect(() => {
+    isPaidUser().then(paid => setIsPaid(paid));
+  }, []);
+
+  const setUserPaid = async () => {
+    await storageSetPaid();
+    setIsPaid(true);
+  };
 
   // ─────────────────────────────────────────────────────────────
   // Session Restore
@@ -101,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const stored = await getAuthUser();
           if (stored) setUser(stored);
         } catch (e) {
-          console.warn('Failed to restore auth session:', e);
+          // Session restore failed — start fresh
         } finally {
           setIsLoading(false);
         }
@@ -146,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(authUser);
       }
     } catch (e: any) {
-      console.error('Email Auth Error:', e);
+      // Email auth error handled via alert below
       const msg = e?.message || 'Could not sign in. Please try again.';
       Alert.alert('Authentication Error', msg);
     }
@@ -158,13 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithApple = async () => {
     try {
       const isAvailable = await AppleAuthentication.isAvailableAsync();
-      if (!isAvailable) {
-        Alert.alert(
-          'Not Available',
-          'Apple Sign In requires a native build. Use Email or Guest for now.',
-        );
-        return;
-      }
+      if (!isAvailable) return; // Silently skip on simulators/Expo Go
 
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -173,46 +186,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ],
       });
 
-      if (useSupabase && credential.identityToken) {
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: 'apple',
-          token: credential.identityToken,
-        });
-        if (error) throw error;
-      } else {
-        const authUser: AuthUser = {
-          id: credential.user,
-          email: credential.email,
-          name: credential.fullName
-            ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim()
-            : null,
-          provider: 'apple',
-          onboardingComplete: false,
-        };
-        await saveAuthUser(authUser);
-        setUser(authUser);
-      }
+      const storedUser = await getAuthUser();
+      const authUser: AuthUser = {
+        id: credential.user,
+        email: credential.email || storedUser?.email || null,
+        name: credential.fullName
+          ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim() || storedUser?.name || null
+          : storedUser?.name || null,
+        provider: 'apple',
+        onboardingComplete: storedUser?.id === credential.user ? storedUser.onboardingComplete : false,
+      };
+      await saveAuthUser(authUser);
+      setUser(authUser);
     } catch (e: any) {
       if (e.code === 'ERR_REQUEST_CANCELED' || e.code === 'ERR_CANCELED') return;
-      console.error('Apple Sign In Error:', e);
-      Alert.alert('Apple Sign In', 'Unable to sign in with Apple. Try Email or Guest.');
+      Alert.alert('Sign In Failed', 'Unable to complete sign in. Please try again.');
     }
   };
 
   // ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
   // Google Sign In
   // ─────────────────────────────────────────────────────────────
   const signInWithGoogle = async () => {
-    if (useSupabase) {
-      Alert.alert(
-        'Coming Soon',
-        'Google Sign In with Supabase requires additional OAuth configuration. Use Email or Guest for now.',
-      );
-    } else {
-      Alert.alert(
-        'Setup Required',
-        'Google Sign In needs a backend. Use Email or Guest for now.',
-      );
+    try {
+      const redirectUrl = AuthSession.makeRedirectUri({ scheme: 'iqon', path: 'auth/callback' });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+      });
+
+      if (error || !data.url) throw new Error('oauth_failed');
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+      if (result.type === 'success' && result.url) {
+        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
+        if (sessionError) throw new Error('session_failed');
+      }
+    } catch (e: any) {
+      const msg = e.message || '';
+      if (msg.includes('cancel') || msg.includes('dismiss') || msg.includes('Cancel')) return;
+      Alert.alert('Sign In Failed', 'Unable to complete sign in. Please try again.');
     }
   };
 
@@ -236,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(guestUser);
       }
     } catch (e: any) {
-      console.error('Guest Sign In Error:', e);
+      // Guest sign in failed — using local fallback
       // Fallback to local guest
       const guestUser: AuthUser = {
         id: `guest_${Date.now()}`,
@@ -283,6 +299,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
+        isPaid,
+        setUserPaid,
         signInWithApple,
         signInWithGoogle,
         signInWithEmail,

@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import 'react-native-reanimated';
 import { AuthProvider, useAuth } from '@/contexts/auth';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Colors } from '@/constants/theme';
 import { useEffect } from 'react';
 import { registerForNotifications } from '@/utils/notifications';
@@ -32,33 +33,27 @@ const LightTheme = {
 };
 
 function RootNavigation() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isPaid } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === 'sign-in';
+    const inAuthGroup  = segments[0] === 'sign-in';
     const inOnboarding = segments[0] === 'onboarding';
+    const inPaywall    = segments[0] === 'paywall';
 
     if (!user) {
-      // Not logged in → sign-in
-      if (!inAuthGroup) {
-        router.replace('/sign-in');
-      }
+      if (!inAuthGroup) router.replace('/sign-in');
     } else if (!user.onboardingComplete) {
-      // Logged in but hasn't completed onboarding
-      if (!inOnboarding) {
-        router.replace('/onboarding');
-      }
+      if (!inOnboarding) router.replace('/onboarding');
+    } else if (!isPaid) {
+      if (!inPaywall) router.replace('/paywall');
     } else {
-      // Logged in + onboarded → main app
-      if (inAuthGroup || inOnboarding) {
-        router.replace('/(tabs)');
-      }
+      if (inAuthGroup || inOnboarding || inPaywall) router.replace('/(tabs)');
     }
-  }, [user, isLoading, segments]);
+  }, [user, isLoading, isPaid, segments]);
 
   // Request notification permissions when user logs in
   useEffect(() => {
@@ -80,6 +75,7 @@ function RootNavigation() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
         <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
+        <Stack.Screen name="paywall" options={{ animation: 'fade', gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="protocol-wizard" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="shop" options={{ presentation: 'modal' }} />
@@ -92,8 +88,10 @@ function RootNavigation() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootNavigation />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <RootNavigation />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

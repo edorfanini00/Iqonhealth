@@ -2,9 +2,9 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors, Shadows } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 import { View } from 'react-native';
+import { Home, Activity, Calculator, BookOpen } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -18,16 +18,21 @@ export default function TabLayout() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 84,
+          height: 82,
           borderTopWidth: 0,
           paddingTop: 10,
-          paddingBottom: 24,
-          ...Shadows.card,
+          paddingBottom: 26,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.04,
+          shadowRadius: 12,
+          elevation: 8,
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
-          letterSpacing: 0.3,
+          letterSpacing: 0.2,
+          marginTop: 2,
         },
         headerShown: false,
         tabBarButton: HapticTab,
@@ -37,28 +42,48 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={22} name="house.fill" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center' }}>
+              <Home size={20} color={color} strokeWidth={focused ? 2.2 : 1.5} />
+              {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.textPrimary, marginTop: 3 }} />}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="protocols"
         options={{
-          title: 'Track',
-          tabBarIcon: ({ color }) => <IconSymbol size={22} name="chart.line.uptrend.xyaxis" color={color} />,
+          title: 'Stack',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center' }}>
+              <Activity size={20} color={color} strokeWidth={focused ? 2.2 : 1.5} />
+              {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.textPrimary, marginTop: 3 }} />}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="calculator"
         options={{
           title: 'Calculator',
-          tabBarIcon: ({ color }) => <IconSymbol size={22} name="function" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center' }}>
+              <Calculator size={20} color={color} strokeWidth={focused ? 2.2 : 1.5} />
+              {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.textPrimary, marginTop: 3 }} />}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
           title: 'Library',
-          tabBarIcon: ({ color }) => <IconSymbol size={22} name="books.vertical" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ alignItems: 'center' }}>
+              <BookOpen size={20} color={color} strokeWidth={focused ? 2.2 : 1.5} />
+              {focused && <View style={{ width: 4, height: 4, borderRadius: 2, backgroundColor: Colors.textPrimary, marginTop: 3 }} />}
+            </View>
+          ),
         }}
       />
     </Tabs>

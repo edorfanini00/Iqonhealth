@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Platform,
-  TextInput, KeyboardAvoidingView, ScrollView, ActivityIndicator, Image,
+  TextInput, KeyboardAvoidingView, ScrollView, ActivityIndicator, Image, Linking,
 } from 'react-native';
 import { useAuth } from '@/contexts/auth';
 import { Colors, Spacing, Radius, Typography, Shadows } from '@/constants/theme';
+
+// TODO: Replace with your real URLs before App Store submission
+const PRIVACY_POLICY_URL = 'https://iqonhealth.com/privacy';
+const TERMS_OF_SERVICE_URL = 'https://iqonhealth.com/terms';
 
 export default function SignIn() {
   const { signInWithApple, signInWithGoogle, signInWithEmail, continueAsGuest } = useAuth();
@@ -67,9 +71,7 @@ export default function SignIn() {
 
             {/* Google Sign In */}
             <TouchableOpacity style={s.googleBtn} onPress={handleGoogle} activeOpacity={0.85} disabled={loading}>
-              <View style={s.googleIconWrap}>
-                <Text style={s.googleG}>G</Text>
-              </View>
+              <Text style={s.googleIcon}>G</Text>
               <Text style={s.googleBtnText}>Continue with Google</Text>
             </TouchableOpacity>
 
@@ -136,8 +138,8 @@ export default function SignIn() {
           {/* ───── Legal ───── */}
           <Text style={s.legal}>
             By continuing, you agree to our{' '}
-            <Text style={s.legalLink}>Terms of Service</Text> and{' '}
-            <Text style={s.legalLink}>Privacy Policy</Text>.
+            <Text style={s.legalLink} onPress={() => Linking.openURL(TERMS_OF_SERVICE_URL)}>Terms of Service</Text> and{' '}
+            <Text style={s.legalLink} onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>Privacy Policy</Text>.
           </Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -208,23 +210,16 @@ const s = StyleSheet.create({
     backgroundColor: Colors.panelBg,
     borderRadius: 16,
     height: 56,
-    borderWidth: 1,
-    borderColor: 'rgba(200,205,210,0.5)',
     gap: 10,
-    ...Shadows.button,
+    borderWidth: 1.5,
+    borderColor: 'rgba(200,205,210,0.5)',
+    ...Shadows.card,
   },
-  googleIconWrap: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#4285F4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  googleG: {
-    fontSize: 13,
+  googleIcon: {
+    fontSize: 20,
     fontWeight: '800',
-    color: '#FFF',
+    color: '#4285F4',
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
   },
   googleBtnText: {
     fontSize: 17,
@@ -232,7 +227,6 @@ const s = StyleSheet.create({
     color: Colors.textPrimary,
   },
 
-  // Divider
   divider: {
     flexDirection: 'row',
     alignItems: 'center',

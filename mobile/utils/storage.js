@@ -81,3 +81,24 @@ export async function saveAuthUser(user) {
 export async function clearAuthUser() {
   await AsyncStorage.removeItem(AUTH_KEY);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Payment Status
+// ═══════════════════════════════════════════════════════════════
+
+const PAYMENT_KEY = '@iqon_paid';
+
+export async function isPaidUser() {
+  try {
+    const val = await AsyncStorage.getItem(PAYMENT_KEY);
+    return val === 'true';
+  } catch { return false; }
+}
+
+export async function setPaidUser() {
+  await AsyncStorage.setItem(PAYMENT_KEY, 'true');
+}
+
+export async function clearPayment() {
+  await AsyncStorage.removeItem(PAYMENT_KEY);
+}

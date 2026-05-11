@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { AlertTriangle, Check, Shield, ChevronRight } from 'lucide-react-native';
+import { AlertTriangle, Check, ChevronRight } from 'lucide-react-native';
 import { Colors, Spacing, Radius, Shadows } from '@/constants/theme';
 import { getRiskColor, getRiskLabel } from '@/data/peptides';
 import RiskConfirmModal from './RiskConfirmModal';
 
-export default function DoseSelector({ peptideName, doses, onSelect, selectedTier }) {
+export default function DoseSelector({ peptideName, doses, onSelect, selectedTier, suggestedTimeLabel = null, cycleWeeks = null }) {
   const [riskModalVisible, setRiskModalVisible] = useState(false);
   const [pendingTier, setPendingTier] = useState(null);
 
@@ -27,69 +27,76 @@ export default function DoseSelector({ peptideName, doses, onSelect, selectedTie
   };
 
   const tierLabels = { low: 'Conservative', med: 'Standard', high: 'Aggressive' };
-  const tierIcons = {
-    low: <Shield size={16} color="#22c55e" />,
-    med: <Shield size={16} color="#f59e0b" />,
-    high: <AlertTriangle size={16} color="#ef4444" />,
-  };
+
+  const formatDose = (dose) =>
+    dose.mcg >= 1000
+      ? `${(dose.mcg / 1000).toFixed(dose.mcg % 1000 === 0 ? 0 : 1)}mg/day`
+      : `${dose.mcg}mcg/day`;
 
   return (
     <View style={s.container}>
-      <Text style={s.title}>Select Dosage</Text>
-      <Text style={s.subtitle}>Choose your dosing tier for {peptideName}</Text>
+      {/* Title */}
+      <Text style={s.title}>Recommended Dosages</Text>
 
       {Object.entries(doses).map(([tier, dose]) => {
         const isSelected = selectedTier === tier;
         const riskColor = getRiskColor(dose.riskLevel);
+        const isElevated = dose.riskLevel === 'elevated' || dose.riskLevel === 'high';
 
         return (
           <TouchableOpacity
             key={tier}
-            style={[
-              s.tierCard,
-              { borderLeftColor: riskColor },
-              isSelected && s.tierCardSelected,
-            ]}
+            style={[s.tierCard, isSelected && s.tierCardSelected]}
             onPress={() => handleSelect(tier, dose)}
             activeOpacity={0.7}
           >
-            <View style={s.tierHeader}>
-              <View style={s.tierLeft}>
-                {tierIcons[tier]}
-                <View>
-                  <Text style={s.tierLabel}>{tierLabels[tier]}</Text>
-                  <Text style={s.tierName}>{dose.label}</Text>
-                </View>
+            {/* Single row: label + dose + chevron/check */}
+            <View style={s.tierRow}>
+              <View style={s.tierInfo}>
+                <Text style={s.tierLabel}>{tierLabels[tier]}</Text>
+                <Text style={s.tierName} numberOfLines={2}>{dose.label}</Text>
               </View>
               <View style={s.tierRight}>
-                <Text style={s.tierDose}>
-                  {dose.mcg >= 1000 ? `${(dose.mcg / 1000).toFixed(dose.mcg % 1000 === 0 ? 0 : 1)}mg` : `${dose.mcg}mcg`}
-                </Text>
+                <Text style={s.tierDose}>{formatDose(dose)}</Text>
                 {isSelected ? (
-                  <View style={[s.checkCircle, { backgroundColor: riskColor }]}>
-                    <Check size={12} color="#FFF" />
+                  <View style={s.checkCircle}>
+                    <Check size={11} color="#FFF" />
                   </View>
                 ) : (
-                  <ChevronRight size={16} color={Colors.grey400} />
+                  <ChevronRight size={14} color={Colors.grey400} />
                 )}
               </View>
             </View>
 
-            {/* Risk description */}
-            <Text style={s.riskDesc}>{dose.risk}</Text>
+            {/* Recommended badge — for standard dose */}
+            {tier === 'med' && (
+              <View style={s.badgeRow}>
+                <View style={[s.riskBadge, { backgroundColor: 'rgba(52,199,89,0.12)' }]}>
+                  <Text style={[s.riskBadgeText, { color: '#34C759' }]}>RECOMMENDED</Text>
+                </View>
+              </View>
+            )}
 
-            {/* Risk badge */}
-            <View style={[s.riskBadge, { backgroundColor: riskColor + '18' }]}>
-              <Text style={[s.riskBadgeText, { color: riskColor }]}>
-                {getRiskLabel(dose.riskLevel)} Risk
-              </Text>
-            </View>
+            {/* Risk badge — only for elevated/high */}
+            {isElevated && (
+              <View style={s.badgeRow}>
+                <View style={[s.riskBadge, { backgroundColor: riskColor + '18' }]}>
+                  <AlertTriangle size={9} color={riskColor} />
+                  <Text style={[s.riskBadgeText, { color: riskColor }]}>{getRiskLabel(dose.riskLevel)}</Text>
+                </View>
+              </View>
+            )}
+
+            {/* Risk description only when selected */}
+            {isSelected && (
+              <Text style={s.riskDesc}>{dose.risk}</Text>
+            )}
 
             {/* High risk warning banner */}
-            {dose.riskLevel === 'high' && (
+            {dose.riskLevel === 'high' && isSelected && (
               <View style={s.highRiskBanner}>
-                <AlertTriangle size={12} color="#dc2626" />
-                <Text style={s.highRiskText}>Requires risk acknowledgment</Text>
+                <AlertTriangle size={11} color="#dc2626" />
+                <Text style={s.highRiskText}>Requires risk acknowledgment before adding</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -109,107 +116,113 @@ export default function DoseSelector({ peptideName, doses, onSelect, selectedTie
 
 const s = StyleSheet.create({
   container: {
-    gap: 12,
+    gap: 8,
   },
   title: {
-    fontSize: 18,
+    fontSize: 11,
     fontWeight: '700',
-    color: Colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 13,
     color: Colors.textSecondary,
-    marginBottom: 4,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
 
   tierCard: {
     backgroundColor: Colors.panelBg,
-    borderRadius: Radius.xl,
-    padding: Spacing.lg,
-    borderLeftWidth: 4,
-    gap: 10,
+    borderRadius: 14,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(200,205,210,0.3)',
     ...Shadows.card,
   },
   tierCardSelected: {
     borderWidth: 1.5,
-    borderColor: Colors.vibrantBlue || '#007AFF',
+    borderColor: Colors.cardDark || '#1C1C1E',
   },
 
-  tierHeader: {
+  tierRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
   },
-  tierLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  tierInfo: {
+    flex: 1,
+    gap: 2,
   },
   tierLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     color: Colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   tierName: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
     color: Colors.textPrimary,
-    marginTop: 1,
   },
   tierRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    flexShrink: 0,
   },
   tierDose: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: Colors.textPrimary,
   },
   checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.cardDark || '#1C1C1E',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  riskDesc: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 19,
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-
   riskBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
   riskBadgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
+  riskDesc: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 17,
+  },
+
   highRiskBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#FEF2F2',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderWidth: 1,
     borderColor: '#FECACA',
   },
   highRiskText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: '#dc2626',
+    flex: 1,
   },
 });
